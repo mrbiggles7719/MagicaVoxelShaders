@@ -1,0 +1,190 @@
+// xs_begin
+// arg : { var = 'birthMin1'	name = 'birthMin1' value = '1'  precision='1' range = '0 9999' step = '1' decimal='0' }
+// arg : { var = 'birthMax1'	name = 'birthMax1' value = '1'  precision='1' range = '0 9999' step = '1' decimal='0' }
+// arg : { var = 'survivalMin1'	name = 'survivalMin1' value = '1'  precision='1' range = '0 9999' step = '1' decimal='0' }
+// arg : { var = 'survivalMax1'	name = 'survivalMax1' value = '1'  precision='1' range = '0 9999' step = '1' decimal='0' }
+// arg : { var = 'birthMin2'	name = 'birthMin2' value = '-1'  precision='1' range = '-1 255' step = '1' decimal='0' }
+// arg : { var = 'birthMax2'	name = 'birthMax2' value = '-1'  precision='1' range = '-1 255' step = '1' decimal='0' }
+// arg : { var = 'survivalMin2'	name = 'survivalMin2' value = '-1'  precision='1' range = '-1 9999' step = '1' decimal='0' }
+// arg : { var = 'survivalMax2'	name = 'survivalMax2' value = '-1'  precision='1' range = '-1 9999' step = '1' decimal='0' }
+// arg : { var = 'deadCutState'	name = 'deadCutState' value = '0'  precision='1' range = '0 255' step = '1' decimal='0' }
+// arg : { var = 'moore'	name = 'moore' value = '1'  precision='1' range = '0 255' step = '1' decimal='0' }
+// arg : { var = 'inner'	name = 'inner' value = '0'  precision='1' range = '0 1' step = '1' decimal='0' }
+// arg : { var = 'radius'	name = 'radius' value = '1'  precision='1' range = '0 10' step = '1' decimal='1' }
+// arg : { var = 'stateNum'	name = 'stateNum' value = '1'  precision='1' range = '0 255' step = '1' decimal='0' }
+// arg : { var = 'lastIteration'	name = 'lastIteration' value = '0'  precision='1' range = '0 64' step = '1' decimal='0' }
+// arg : { var = 'neighSwitchInt' name = 'neighSwitchInt' value = '0'  precision='1' range = '0 64' step = '1' decimal='0' }
+// xs_end
+
+//  Cellular Automata Shader by MrBiggles7719
+
+// Distance frunctions came from:
+// https://gist.github.com/BarakChamo/bbaa5080acad2e3f8080e3bdd42325a7
+float manhattanDistance(vec3 p1, vec3 p2) {
+	float d1 = abs(p1.x - p2.x);
+	float d2 = abs(p1.y - p2.y);
+	float d3 = abs(p1.z - p2.z);
+	return d1 + d2 + d3;
+}
+
+float euclideanDistance(vec3 p1, vec3 p2) {
+	float d1 = (p1.x - p2.x);
+	float d2 = (p1.y - p2.y);
+	float d3 = (p1.z - p2.z);
+	return sqrt(pow(d1, 2.0) + pow(d2, 2.0) + pow(d3, 2.0));
+}
+
+float chebyshevDistance(vec3 p1, vec3 p2) {
+	float d1 = abs(p1.x - p2.x);
+	float d2 = abs(p1.y - p2.y);
+	float d3 = abs(p1.z - p2.z);
+	return max(d1, max(d2, d3));
+}
+
+bool inBounds(vec3 v) {
+	bool xb = (v.x >= 0 && v.x < iVolumeSize.x);
+	bool yb = (v.y >= 0 && v.y < iVolumeSize.y);
+	bool zb = (v.z >= 0 && v.z < iVolumeSize.z);
+	return(xb && yb && zb);
+}
+
+bool getState(vec3 v) {
+	if(voxel(v) > 0) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+
+// Count von Neumann neighborhood
+int getVN(vec3 sv) {
+	int cnt = 0;
+	int self = voxel(sv);
+	int radius = int(radius);
+	for(int i = -radius; i <= radius; i++) {
+		for(int j = -radius; j <= radius; j++) {
+			for(int k = -radius; k <= radius; k++) {
+				vec3 cmpV = vec3(sv.x+float(i),sv.y+float(j),sv.z+float(k));
+				float dist = manhattanDistance(vec3(0,0,0),vec3(i,j,k));
+				
+				if(getState(cmpV)) {
+					if( dist <= radius ){				
+						cnt++;
+					}
+					if(inner < 1 && i == 0 && j == 0 && k == 0) {
+						cnt--;
+					}
+				}
+			}
+		}
+	}
+	return cnt;
+}
+
+// Count Moore neighborhood
+int getMoore(vec3 sv) {
+	int cnt = 0;
+	int self = voxel(sv);
+
+	for(int i = -radius; i <= radius; i++) {
+		for(int j = -radius; j <= radius; j++) {
+			for(int k = -radius; k <= radius; k++) {
+				vec3 cmpV = vec3(sv.x+float(i),sv.y+float(j),sv.z+float(k));
+				if(getState(cmpV)) {
+					cnt++;
+
+					if(inner < 1 && i == 0 && j == 0 && k == 0) {
+						cnt--;
+					}
+				}
+			}
+		}
+	}
+
+	return cnt;
+}
+
+float map( vec3 v ) {
+	float currentColor = voxel(v);
+	vec3 center = iVolumeSize/2.0;
+	float localRadius = distance(v,center);
+	bool myState = getState(v);
+	int neighborCount = 0;
+	int r = 0;
+	int deadColor = 0;
+	bool useMoore = (moore > 0);
+	if(deadCutState > 0)
+		deadColor = stateNum;
+
+	//  When color mode is 1, last iteration means just color existing cells.
+	// This is for diagnostics, or if you want to color things after they are set
+
+
+	if(neighSwitchInt > 0) {
+		if(iIter < neighSwitchInt) {
+			if(moore < 1) {
+				useMoore = false;
+			} else {
+				useMoore = true;
+			}
+		} else  {
+			if(moore < 1) {
+				useMoore = true;
+			} else {
+				useMoore = false;
+			}	
+		}
+	} else {
+		useMoore = (moore > 0);
+	}
+
+	if(useMoore) {
+		neighborCount = getMoore(v);
+	} else {
+		neighborCount = getVN(v);
+	}
+
+	bool withinBirthRange1 = (neighborCount >= birthMin1 && neighborCount <= birthMax1);
+	bool withinBirthRange2 = (neighborCount >= birthMin2 && neighborCount <= birthMax2);
+	bool withinSurvivalRange1 = (neighborCount >= survivalMin1 && neighborCount <= survivalMax1);
+	bool withinSurvivalRange2 = (neighborCount >= survivalMin2 && neighborCount <= survivalMax2);
+
+
+	// If there are NO cells
+	if(! myState) {
+		if(withinBirthRange1 || withinBirthRange2) {
+			return 1;
+		} else {
+			return -1.;
+		}
+	}
+
+	
+	// "Dead" cells won't be re-used.   On last iterate, remove them so we have empty space	
+	if(lastIteration > 1 && deadColor > 0) {
+		if(iIter >= lastIteration-1 && currentColor >= deadCutState) {
+			return 0;
+		}
+	}
+	
+
+	//  If we have a cell, do something
+	//  For a state 1 cell (color = 1) it only survives if it has more than suvivalNum neightbors
+	if(myState) {
+		float newColor = currentColor + 1.0;
+		if(withinSurvivalRange1 || withinSurvivalRange2) {
+			return currentColor;
+		} else {
+			if(newColor > stateNum) {
+				return deadColor;
+			} else {
+				return newColor;
+			}
+		}
+	}
+
+	return 0.;
+
+}
+

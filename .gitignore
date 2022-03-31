@@ -1,0 +1,17 @@
+shader/*.txt
+.vs
+shader/.DS_Store	
+cache
+config
+export
+ibl
+images
+plugin
+vox
+MagicaVoxel.exe
+readme.txt
+shader/mrbiggles/testing
+palette/pal0.png
+palette/pal1.png
+palette/pal2.png
+palette/pal3.png

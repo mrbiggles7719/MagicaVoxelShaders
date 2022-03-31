@@ -1,0 +1,157 @@
+// xs_begin
+// arg : { var = 'survivalMin'	name = 'survivalMin' value = '2'  precision='1' range = '0 26' step = '1' decimal='0' }
+// arg : { var = 'survivalMax'	name = 'survivalMax' value = '3'  precision='1' range = '0 26' step = '1' decimal='0' }
+// arg : { var = 'birthMin'	name = 'birthMin' value = '3'  precision='1' range = '0 26' step = '1' decimal='0' }
+// arg : { var = 'birthMax'	name = 'birthMax' value = '3'  precision='1' range = '0 26' step = '1' decimal='0' }
+// arg : { var = 'stateNum'	name = 'stateNum' value = '5'  precision='1' range = '1 10' step = '1' decimal='0' }
+// arg : { var = 'deadColor'	name = 'deadColor' value = '0'  precision='1' range = '0 254' step = '1' decimal='0' }
+// xs_end
+
+
+float pal(float p) {
+	float f = floor(mix(0.0, float(i_num_color_sels), p));
+	return color_sel(f);
+}
+
+bool getState(vec3 v) {
+	if(voxel(v) > 0) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+vec3 getEast(vec3 v) {
+	vec3 n = vec3(v.x+1.0,v.y,v.z);
+	return n;
+}
+
+vec3 getWest(vec3 v) {
+	vec3 n = vec3(v.x-1.0,v.y,v.z);
+	return n;
+}
+
+vec3 getNorth(vec3 v) {
+	vec3 n = vec3(v.x,v.y+1.0,v.z);
+	return n;
+}
+
+vec3 getSouth(vec3 v) {
+	vec3 n = vec3(v.x,v.y-1.0,v.z);
+	return n;
+}
+
+vec3 getNorthEast(vec3 v) {
+	vec3 n = vec3(v.x+1.0,v.y+1.0,v.z);
+	return n;
+}
+
+vec3 getNorthWest(vec3 v) {
+	vec3 n= vec3(v.x-1.0,v.y+1.0,v.z);
+	return n;
+}
+
+vec3 getSouthEast(vec3 v) {
+	vec3 n = vec3(v.x+1.0,v.y-1.0,v.z);
+	return n;
+}
+
+vec3 getSouthWest(vec3 v) {
+	vec3 n= vec3(v.x-1.0,v.y-1.0,v.z);
+	return n;
+}
+
+
+
+
+//  Got this idea from Eric's GOL shader.  Not using it yet though.
+int scan(vec3 sv) {
+
+	int cnt = 0;
+	for(int i = -1; i < 1; i++) {
+		for(int j = -1; j < 1; j++) {
+			for(int k = -1; k < 1; k++) {
+				vec3 cmpV = vec3(sv.x+float(i),sv.y+float(j),sv.z+float(k));
+				if(getState(cmpV)) {
+					cnt++;
+				}
+			}
+		}
+	}
+	return cnt;
+}
+
+
+bool inBounds(vec3 v) {
+	return true;
+	bool xb = (v.x > 0.5f && v.x < iVolumeSize.x-0.5f);
+	bool yb = (v.y > 0.5f && v.y < iVolumeSize.y-0.5f);
+	bool zb = (v.z > 0.5f && v.z < iVolumeSize.z-0.5f);
+	return(xb && yb && zb);
+}
+
+// The first 4 indicates that a state 1 cell survives if it has 4 neighbor cells.
+// The second 4 indicates that a cell is born in an empty location if it has 4 neighbors.
+// The 5 means each cell has 5 total states it can be in (state 4 for newly born which then fades to state 1
+
+float map( vec3 v ) {
+	vec3 center = iVolumeSize/2.0;
+	vec3 c = v - 0.5;
+	vec3 lastv = vec3(v.x,v.y,v.z-1.0);
+	vec3 nextv = vec3(v.x,v.y,v.z+1.0);
+	bool[27] states;
+	
+
+
+	if(inBounds(v)) {
+		int nc = 0;
+		float currentColor = voxel(v);
+		
+		states[0] = getState(getWest(lastv));
+		states[1] = getState(getEast(lastv));
+		states[2] = getState(getNorth(lastv));
+		states[3] = getState(getSouth(lastv));
+		states[4] = getState(getNorthEast(lastv));
+		states[5] = getState(getNorthWest(lastv));
+		states[6] = getState(getSouthEast(lastv));
+		states[7] = getState(getSouthWest(lastv));
+		states[8] = getState(voxel(lastv));
+
+		states[9] = getState(getWest(v));
+		states[10] = getState(getEast(v));
+		states[11] = getState(getNorth(v));
+		states[12] = getState(getSouth(v));
+		states[13] = getState(getNorthEast(v));
+		states[14] = getState(getNorthWest(v));
+		states[15] = getState(getSouthEast(v));
+		states[16] = getState(getSouthWest(v));
+		states[17] = (currentColor > 0 && currentColor < 255);
+
+
+		states[18] = getState(getWest(nextv));
+		states[19] = getState(getEast(nextv));
+		states[20] = getState(getNorth(nextv));
+		states[21] = getState(getSouth(nextv));
+		states[22] = getState(getNorthEast(nextv));
+		states[23] = getState(getNorthWest(nextv));
+		states[24] = getState(getSouthEast(nextv));
+		states[25] = getState(getSouthWest(nextv));
+		states[26] = getState(voxel(nextv));
+
+		for(int i = 0; i < 27; i++) {
+			if(states[i]) 
+				nc++;
+		}
+
+
+		//  If we have a cell, do something
+		//  For a state 1 cell (color = 1) it only survives if it has more than suvivalNum neightbors
+		if(states[17]) {
+			return nc;
+		}
+
+	}
+
+	return 0.;
+
+}
