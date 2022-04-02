@@ -27,7 +27,7 @@ int birthMin2 = int(_birthMin2);
 int birthMax2 = int(_birthMax2);
 int survivalMin2 = int(_survivalMin2);
 int survivalMax2 = int(_survivalMax2);
-int deadCutState = int(_deadCutState);
+float deadCutState = float(_deadCutState);
 int moore = int(_moore);
 int inner = int(_inner);
 int radius = int(_radius);
@@ -113,7 +113,6 @@ int getMoore(vec3 sv) {
 
 	return cnt;
 }
-
 float map( vec3 v ) {
 	float currentColor = voxel(v);
 	vec3 center = iVolumeSize/2.0;
@@ -125,7 +124,7 @@ float map( vec3 v ) {
 	bool useMoore = true;
 
 
-	if(deadCutState > 0)
+	if(deadCutState > 0.0)
 		deadColor = float(stateNum);
 
 
@@ -156,14 +155,12 @@ float map( vec3 v ) {
 		}
 	}
 
-	
 	// "Dead" cells won't be re-used.   On last iterate, remove them so we have empty space	
 	if(lastIteration > 1 && deadColor > 0.0) {
 		if(int(iIter) >= lastIteration-1 && currentColor >= deadCutState) {
 			return 0.0;
 		}
 	}
-	
 	//  If we have a cell, do something
 	//  For a state 1 cell (color = 1) it only survives if it has more than suvivalNum neightbors
 	if(myState) {
@@ -171,7 +168,7 @@ float map( vec3 v ) {
 		if(withinSurvivalRange1 || withinSurvivalRange2) {
 			return currentColor;
 		} else {
-			if(newColor > stateNum) {
+			if(newColor > float(stateNum)) {
 				return deadColor;
 			} else {
 				return newColor;
