@@ -1,0 +1,15 @@
+// xs_begin
+// arg : { var = 'radius' name = 'radius' value = '1'  precision='1' range = '0 127' step = '1' decimal='0' }
+// xs_end
+
+//  Cellular Automata Shader by MrBiggles7719
+
+
+float map( vec3 v ) {
+	vec3 center = iVolumeSize * 0.5;
+	vec3 vector = v + 0.5 - center;
+	float dist = length(vector);
+	float activation = step(dist, radius);
+	return 1.0 * activation;
+	
+}
