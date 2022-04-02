@@ -23,7 +23,7 @@ iterations.   As such, you typically set the Shader count and run many iteration
 
 The rules are simple, but you can achieve striking and amazingly complex structures.
 
- * [ca_totalistic.txt](https://en.wikipedia.org/wiki/Rule_30) - Supports the artist defining their own totalistic CA rules.   This basically means 
+ * [ca_totalistic.txt](https://github.com/mrbiggles7719/MagicaVoxelShaders/wiki/ca_totalistic) - Supports the artist defining their own totalistic CA rules.   This basically means 
  they define the number of neighbors which are required to keep a cell alive or for a new cell to be born.
 
 
