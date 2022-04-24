@@ -7,6 +7,7 @@ config
 export
 ibl
 images
+debug
 plugin
 vox
 MagicaVoxel.exe
@@ -17,3 +18,4 @@ palette/pal1.png
 palette/pal2.png
 palette/pal3.png
 *.exe
+shader/mrbiggles/ca/ca_neighbors.txt

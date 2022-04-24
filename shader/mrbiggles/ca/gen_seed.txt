@@ -1,15 +1,36 @@
 // xs_begin
-// arg : { var = 'radius' name = 'radius' value = '1'  precision='1' range = '0 127' step = '1' decimal='0' }
+// arg : { var = 'radius' name = 'radius' value = '0'  precision='1' range = '0 127' step = '1' decimal='0' }
+// arg : { var = 'shape' name = 'shape' value = '0'  precision='1' range = '0 127' step = '1' decimal='0' }
 // xs_end
 
-//  Cellular Automata Shader by MrBiggles7719
 
 
-float map( vec3 v ) {
-	vec3 center = iVolumeSize * 0.5;
+float getSphere(vec3 v) {
+	vec3 center = iVolumeSize/2.0 + 0.5;
 	vec3 vector = v + 0.5 - center;
 	float dist = length(vector);
 	float activation = step(dist, radius);
 	return 1.0 * activation;
+}
+
+float getCube(vec3 v) {
+	vec3 center = iVolumeSize/2.0;
+	vec3 vector = v - center;
+	float dx = abs(v.x - center.x);
+	float dy = abs(v.y - center.y);
+	float dz = abs(v.z - center.z);
+	float activation = (dx < radius+1.0 && dy < radius+1.0 && dz < radius+1.0);
+	return 1.0 * activation;
+
+}
+
+
+
+float map( vec3 v ) {
+	if(shape == 1.0) {
+		return getSphere(v);
+	} else {
+		return getCube(v);
+	}
 	
 }

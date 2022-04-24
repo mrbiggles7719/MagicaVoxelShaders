@@ -139,7 +139,6 @@ float map( vec3 v ) {
 	}
 
 	neighborCount = useMoore ? getMoore(v) : getVN(v);
-
 	bool withinBirthRange1 = (neighborCount >= birthMin1 && neighborCount <= birthMax1);
 	bool withinBirthRange2 = (neighborCount >= birthMin2 && neighborCount <= birthMax2);
 	bool withinSurvivalRange1 = (neighborCount >= survivalMin1 && neighborCount <= survivalMax1);
@@ -151,7 +150,7 @@ float map( vec3 v ) {
 		if(withinBirthRange1 || withinBirthRange2) {
 			return 1.0;
 		} else {
-			return -1.0;
+			return 0.0;
 		}
 	}
 
@@ -164,6 +163,7 @@ float map( vec3 v ) {
 	//  If we have a cell, do something
 	//  For a state 1 cell (color = 1) it only survives if it has more than suvivalNum neightbors
 	if(myState) {
+
 		float newColor = currentColor + 1.0;
 		if(withinSurvivalRange1 || withinSurvivalRange2) {
 			return currentColor;
